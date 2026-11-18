@@ -1,0 +1,10 @@
+# Keep images small and never bake local secrets or data into them.
+**/node_modules
+**/.env
+**/.expo
+**/dist
+**/uploads
+**/*.log
+.git
+apps/mobile/ios
+apps/mobile/android

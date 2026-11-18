@@ -25,6 +25,7 @@ A mobile version of the `../baki-khata` shop ledger: shops record **baki** (cred
 
 ```
 package.json            npm workspaces (apps/*, packages/*)
+docker-compose.yml      db + api + mobile; apps/api/Dockerfile, apps/mobile/Dockerfile, docker/mysql/init/
 packages/shared/        zod schemas + TS types (ships TS source, main=src/index.ts)
 apps/api/               Express API
   src/db/schema.ts      owners, shops, customers, transactions (Drizzle mysql-core)
@@ -49,6 +50,7 @@ apps/mobile/src/components/  Keypad, NumberEntry, TextStep, BigButton, ConfirmBa
 - `apps/api/.env` exists locally (gitignored) and holds `DATABASE_URL`, `TEST_DATABASE_URL`, `JWT_SECRET` and `UPLOAD_DIR`. Template: `.env.example`. Never print or commit it.
 - MySQL databases `baki_khata_mobile` and `baki_khata_mobile_test` are already created. They use the same local MySQL credentials as `../baki-khata`.
 - Node 24 and npm. Commands run from the repo root: `npm run api`, `npm run mobile`, `npm test`, `npm run typecheck`.
+- **Docker (no local Node/MySQL needed):** `docker compose up --build --watch` starts `db` (MySQL 8.4, host port 3307), `api` (runs migrations on start, port 4000) and `mobile` (Expo on 8081). Settings come from the root `.env` (gitignored, template `.env.example`): `MYSQL_ROOT_PASSWORD`, `JWT_SECRET`, `HOST_IP`. Tests: `docker compose run --rm api npm test`. The images run `npm ci` from the lockfile, so after changing dependencies, rebuild (`--watch` does this when `package-lock.json` changes). See README.md.
 - When the app runs on a phone, the API base URL must be the machine's LAN IP, not localhost.
 
 ## Status / next steps
