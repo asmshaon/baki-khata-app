@@ -47,12 +47,28 @@ export type CustomerUpdateInput = z.infer<typeof customerUpdateSchema>;
 export const transactionTypeSchema = z.enum(['baki', 'joma']);
 export type TransactionType = z.infer<typeof transactionTypeSchema>;
 
+export const paymentMethodSchema = z.enum(['cash', 'bkash', 'nagad', 'rocket']);
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
+
+/** A calendar day, YYYY-MM-DD. */
+export const dayStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'dateInvalid');
+
 export const transactionCreateSchema = z.object({
   type: transactionTypeSchema,
   amount: z.number().int().positive('amountInvalid').max(10_000_000),
   note: z.string().trim().max(160).optional(),
+  /** Joma only: how it was paid. */
+  method: paymentMethodSchema.optional(),
+  /** Baki only: the day the customer promised to pay; null clears it. */
+  promisedOn: dayStringSchema.nullable().optional(),
 });
 export type TransactionCreateInput = z.infer<typeof transactionCreateSchema>;
+
+/** One day of entries for the daily report: the app sends its local day as [from, to). */
+export const reportQuerySchema = z.object({
+  from: z.iso.datetime(),
+  to: z.iso.datetime(),
+});
 
 export const customerSearchSchema = z.object({
   q: z.string().trim().max(80).optional(),
@@ -79,6 +95,10 @@ export interface Customer {
   photoUrl: string | null;
   balance: number;
   hasPin: boolean;
+  /** Time of the latest entry, or null if there are none. */
+  lastEntryAt: string | null;
+  /** Promised payment day (YYYY-MM-DD) or null. */
+  promisedOn: string | null;
   createdAt: string;
 }
 
@@ -87,9 +107,16 @@ export interface Transaction {
   customerId: number;
   type: TransactionType;
   amount: number;
+  method: PaymentMethod | null;
   note: string | null;
   balanceAfter: number;
   createdAt: string;
+}
+
+/** A daily-report row: the entry plus who it was for. */
+export interface ReportEntry extends Transaction {
+  customerName: string;
+  customerPhotoUrl: string | null;
 }
 
 export interface Summary {

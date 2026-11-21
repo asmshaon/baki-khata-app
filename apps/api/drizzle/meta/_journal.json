@@ -8,6 +8,20 @@
       "when": 1794976745027,
       "tag": "0000_nebulous_winter_soldier",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1795058025987,
+      "tag": "0001_last_entry_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1795062362064,
+      "tag": "0002_promise_and_method",
+      "breakpoints": true
     }
   ]
 }

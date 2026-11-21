@@ -55,3 +55,34 @@ export function formatDateTime(iso: string, lang: Lang): string {
   const date = `${d.getDate()} ${MONTHS[lang][d.getMonth()]}${year}`;
   return lang === 'bn' ? toBanglaDigits(`${date}, ${banglaPeriod(h)} ${time}`) : `${date}, ${time} ${h < 12 ? 'AM' : 'PM'}`;
 }
+
+/** Whole calendar days between the date and today (0 = today), in local time. */
+export function daysSince(iso: string, now = new Date()): number {
+  const d = new Date(iso);
+  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  return Math.round((start(now) - start(d)) / 86_400_000);
+}
+
+/** Local calendar day as YYYY-MM-DD (what the API stores for promise dates). */
+export function toDayString(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Parses YYYY-MM-DD as a local date (not UTC midnight). */
+export function fromDayString(day: string): Date {
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+const WEEKDAYS: Record<Lang, string[]> = {
+  bn: ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'],
+  en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+};
+
+/** "১ ডিসেম্বর" / "1 Dec"; adds the year only when it is not this year. */
+export function formatDay(day: string | Date, lang: Lang, withWeekday = false): string {
+  const d = typeof day === 'string' ? fromDayString(day) : day;
+  const year = d.getFullYear() === new Date().getFullYear() ? '' : ` ${d.getFullYear()}`;
+  const text = `${withWeekday ? `${WEEKDAYS[lang][d.getDay()]}, ` : ''}${d.getDate()} ${MONTHS[lang][d.getMonth()]}${year}`;
+  return lang === 'bn' ? toBanglaDigits(text) : text;
+}

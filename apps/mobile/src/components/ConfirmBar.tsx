@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../lib/i18n';
-import { colors } from '../lib/theme';
+import { colors, fontFamily } from '../lib/theme';
 
 type Props = { onConfirm: () => void; onCancel: () => void; loading?: boolean };
 
@@ -51,5 +51,5 @@ const styles = StyleSheet.create({
   bar: { flexDirection: 'row', justifyContent: 'space-evenly', paddingVertical: 20 },
   choice: { alignItems: 'center', gap: 8 },
   circle: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 22, fontWeight: '700' },
+  label: { fontFamily, fontSize: 22, fontWeight: '700' },
 });

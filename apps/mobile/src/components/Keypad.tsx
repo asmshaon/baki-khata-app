@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../lib/i18n';
-import { colors, radius } from '../lib/theme';
+import { colors, fontFamily, radius } from '../lib/theme';
 
 type Props = {
   onDigit: (digit: string) => void;
@@ -90,5 +90,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  keyText: { fontSize: 32, fontWeight: '600', color: colors.text },
+  keyText: { fontFamily, fontSize: 32, fontWeight: '600', color: colors.text },
 });

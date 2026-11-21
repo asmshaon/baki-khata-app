@@ -3,7 +3,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatTaka } from '../lib/format';
 import { useI18n, type StringKey } from '../lib/i18n';
-import { colors, radius } from '../lib/theme';
+import { METHOD_LABEL } from '../lib/methods';
+import { colors, fontFamily, radius } from '../lib/theme';
 
 /** Wording and colour for a running balance: red when owed, green when paid ahead. */
 export function balanceTone(balance: number): { label: StringKey; color: string; soft: string } {
@@ -25,19 +26,41 @@ export function BalanceCard({ balance }: { balance: number }) {
   );
 }
 
-export function TransactionRow({ tx }: { tx: Transaction }) {
+/** One history entry. `onUndo` shows a "mistake? delete" button (owner, latest entry only). */
+export function TransactionRow({ tx, onUndo, undoing }: { tx: Transaction; onUndo?: () => void; undoing?: boolean }) {
   const { t, dateTime } = useI18n();
   const isBaki = tx.type === 'baki';
   const color = isBaki ? colors.baki : colors.joma;
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { borderLeftColor: color }]}>
       <View style={[styles.rowIcon, { backgroundColor: isBaki ? colors.bakiSoft : colors.jomaSoft }]}>
         <Ionicons name={isBaki ? 'arrow-up' : 'arrow-down'} size={26} color={color} />
       </View>
       <View style={styles.rowBody}>
         <Text style={[styles.rowType, { color }]}>{t(isBaki ? 'bakiGiven' : 'paymentReceived')}</Text>
         <Text style={styles.rowDate}>{dateTime(tx.createdAt)}</Text>
-        {tx.note ? <Text style={styles.rowDate}>{tx.note}</Text> : null}
+        {tx.method || tx.note ? (
+          <Text style={styles.rowNote} numberOfLines={2}>
+            {[tx.method ? t(METHOD_LABEL[tx.method]) : null, tx.note].filter(Boolean).join(', ')}
+          </Text>
+        ) : null}
+        {onUndo ? (
+          <Pressable
+            onPress={onUndo}
+            disabled={undoing}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('undoEntry')}
+            style={styles.undo}
+          >
+            {undoing ? (
+              <ActivityIndicator size="small" color={colors.muted} />
+            ) : (
+              <Ionicons name="trash-outline" size={18} color={colors.muted} />
+            )}
+            <Text style={styles.undoText}>{t('undoEntry')}</Text>
+          </Pressable>
+        ) : null}
       </View>
       <View style={styles.rowRight}>
         <Text style={[styles.rowAmount, { color }]}>
@@ -72,8 +95,8 @@ export function LoadState({ loading, error, onRetry }: { loading: boolean; error
 
 const styles = StyleSheet.create({
   card: { borderRadius: radius.lg, borderWidth: 2, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center' },
-  cardLabel: { fontSize: 20, fontWeight: '700' },
-  cardAmount: { fontSize: 48, fontWeight: '800' },
+  cardLabel: { fontFamily, fontSize: 20, fontWeight: '700' },
+  cardAmount: { fontFamily, fontSize: 48, fontWeight: '800' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -82,16 +105,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: radius.md,
+    borderLeftWidth: 5,
   },
   rowIcon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
   rowBody: { flex: 1, gap: 2 },
-  rowType: { fontSize: 18, fontWeight: '700' },
-  rowDate: { fontSize: 14, color: colors.muted },
+  rowType: { fontFamily, fontSize: 18, fontWeight: '700' },
+  rowDate: { fontFamily, fontSize: 14, color: colors.muted },
+  rowNote: { fontFamily, fontSize: 16, color: colors.text, fontWeight: '600' },
+  undo: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, alignSelf: 'flex-start' },
+  undoText: { fontFamily, fontSize: 15, color: colors.muted, fontWeight: '700', textDecorationLine: 'underline' },
   rowRight: { alignItems: 'flex-end', gap: 2 },
-  rowAmount: { fontSize: 20, fontWeight: '800' },
-  rowAfter: { fontSize: 14, fontWeight: '600' },
+  rowAmount: { fontFamily, fontSize: 20, fontWeight: '800' },
+  rowAfter: { fontFamily, fontSize: 14, fontWeight: '600' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: colors.bg },
-  centerText: { fontSize: 18, color: colors.text, textAlign: 'center' },
+  centerText: { fontFamily, fontSize: 18, color: colors.text, textAlign: 'center' },
   retry: {
     flexDirection: 'row',
     gap: 8,
@@ -101,5 +128,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 14,
   },
-  retryText: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  retryText: { color: '#fff', fontFamily, fontSize: 20, fontWeight: '700' },
 });

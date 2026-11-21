@@ -1,4 +1,4 @@
-import type { Customer, Summary, Transaction, TransactionType } from '@baki/shared';
+import type { Customer, PaymentMethod, ReportEntry, Summary, Transaction, TransactionType } from '@baki/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
 
@@ -9,7 +9,18 @@ export const keys = {
   transactions: (id: number) => ['owner', 'customer', id, 'transactions'] as const,
   me: ['customer', 'me'] as const,
   myTransactions: ['customer', 'transactions'] as const,
+  report: (from: string) => ['owner', 'report', from] as const,
 };
+
+/** Every entry in the shop for one local day [from, to). */
+export const useReport = (from: Date, to: Date) =>
+  useQuery({
+    queryKey: keys.report(from.toISOString()),
+    queryFn: () =>
+      api<{ entries: ReportEntry[] }>(
+        `/owner/report?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`,
+      ).then((r) => r.entries),
+  });
 
 export const useSummary = () => useQuery({ queryKey: keys.summary, queryFn: () => api<Summary>('/owner/summary') });
 
@@ -47,7 +58,7 @@ export function useAddEntry(customerId: number) {
   const queryClient = useQueryClient();
   const refresh = useRefreshCustomer();
   return useMutation({
-    mutationFn: (input: { type: TransactionType; amount: number }) =>
+    mutationFn: (input: { type: TransactionType; amount: number; note?: string; method?: PaymentMethod; promisedOn?: string | null }) =>
       api<{ transaction: Transaction; customer: Customer }>(`/owner/customers/${customerId}/transactions`, {
         method: 'POST',
         body: input,
@@ -55,6 +66,27 @@ export function useAddEntry(customerId: number) {
     onSuccess: ({ customer }) => {
       refresh(customer);
       void queryClient.invalidateQueries({ queryKey: keys.transactions(customerId) });
+      void queryClient.invalidateQueries({ queryKey: ['owner', 'report'] });
+    },
+  });
+}
+
+/** The API lets the owner delete an entry for 24 hours after it was recorded. */
+export function withinUndoWindow(createdAt: string) {
+  return Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000;
+}
+
+/** Deletes the customer's latest entry (the API allows only that one, within 24 hours). */
+export function useUndoEntry(customerId: number) {
+  const queryClient = useQueryClient();
+  const refresh = useRefreshCustomer();
+  return useMutation({
+    mutationFn: (transactionId: number) =>
+      api<{ customer: Customer }>(`/owner/customers/${customerId}/transactions/${transactionId}`, { method: 'DELETE' }),
+    onSuccess: ({ customer }) => {
+      refresh(customer);
+      void queryClient.invalidateQueries({ queryKey: keys.transactions(customerId) });
+      void queryClient.invalidateQueries({ queryKey: ['owner', 'report'] });
     },
   });
 }

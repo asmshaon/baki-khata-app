@@ -17,6 +17,8 @@ export default function OwnerLayout() {
       <Stack.Screen name="customer/[id]/index" options={{ title: '' }} />
       <Stack.Screen name="customer/[id]/entry" options={{ title: '' }} />
       <Stack.Screen name="customer/[id]/edit" options={{ title: t('customerInfo') }} />
+      <Stack.Screen name="customer/[id]/statement" options={{ title: t('sendStatement') }} />
+      <Stack.Screen name="report" options={{ title: t('report') }} />
     </Stack>
   );
 }

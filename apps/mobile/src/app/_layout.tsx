@@ -1,3 +1,4 @@
+import { useFonts } from 'expo-font';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -12,7 +13,10 @@ export const unstable_settings = { anchor: 'index' };
 function RootStack() {
   const { ready } = useSession();
   const { ready: langReady, t } = useI18n();
-  if (!ready || !langReady) return null; // the splash screen stays up until stored session and language are read
+  // Kalpurush, the app font (see theme.ts). On a load error, carry on with the system font.
+  const [fontLoaded, fontError] = useFonts({ Kalpurush: require('../../assets/fonts/Kalpurush.ttf') });
+  // The splash screen stays up until the stored session, language and font are ready.
+  if (!ready || !langReady || (!fontLoaded && !fontError)) return null;
 
   return (
     <Stack screenOptions={stackScreenOptions}>

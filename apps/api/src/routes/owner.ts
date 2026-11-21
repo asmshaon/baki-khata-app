@@ -2,10 +2,11 @@ import {
   customerCreateSchema,
   customerSearchSchema,
   customerUpdateSchema,
+  reportQuerySchema,
   transactionCreateSchema,
   type Summary,
 } from '@baki/shared';
-import { and, asc, desc, eq, gt, like, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, like, lt, or, sql } from 'drizzle-orm';
 import { Router, type Request } from 'express';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
@@ -191,7 +192,6 @@ ownerRouter.post('/customers/:id/transactions', async (req, res) => {
     const [locked] = await tx.select().from(customers).where(eq(customers.id, customerId)).for('update');
     const balanceAfter = locked.balance + (input.type === 'baki' ? input.amount : -input.amount);
 
-    await tx.update(customers).set({ balance: balanceAfter }).where(eq(customers.id, customerId));
     const [{ id }] = await tx
       .insert(transactions)
       .values({
@@ -199,6 +199,7 @@ ownerRouter.post('/customers/:id/transactions', async (req, res) => {
         customerId,
         type: input.type,
         amount: input.amount,
+        method: input.type === 'joma' ? (input.method ?? null) : null,
         note: input.note || null,
         balanceAfter,
         createdBy: ownerId,
@@ -206,11 +207,87 @@ ownerRouter.post('/customers/:id/transactions', async (req, res) => {
       .$returningId();
 
     const [row] = await tx.select().from(transactions).where(eq(transactions.id, id));
-    return { transaction: row, customer: { ...locked, balance: balanceAfter } };
+    // A baki may carry a new promise date; once nothing is owed, any promise is done.
+    let promisedOn = locked.promisedOn;
+    if (input.type === 'baki' && input.promisedOn !== undefined) promisedOn = input.promisedOn;
+    if (balanceAfter <= 0) promisedOn = null;
+
+    const changes = { balance: balanceAfter, lastEntryAt: row.createdAt, promisedOn };
+    await tx.update(customers).set(changes).where(eq(customers.id, customerId));
+    return { transaction: row, customer: { ...locked, ...changes } };
   });
 
   res.status(201).json({
     transaction: serializeTransaction(result.transaction),
     customer: serializeCustomer(result.customer),
+  });
+});
+
+const UNDO_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Undoes a mistaken entry. Only the customer's latest entry, and only within
+ * 24 hours, so the balance_after chain stays correct and older history
+ * (which the customer can see) cannot be rewritten.
+ */
+ownerRouter.delete('/customers/:id/transactions/:txId', async (req, res) => {
+  const { id: customerId } = await findShopCustomer(req);
+  const txId = validate(idParam, req.params.txId);
+
+  const customer = await db.transaction(async (tx) => {
+    const [locked] = await tx.select().from(customers).where(eq(customers.id, customerId)).for('update');
+    const [latest, previous] = await tx
+      .select()
+      .from(transactions)
+      .where(eq(transactions.customerId, customerId))
+      .orderBy(desc(transactions.id))
+      .limit(2);
+
+    if (!latest || latest.id !== txId) {
+      const [target] = await tx
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(and(eq(transactions.id, txId), eq(transactions.customerId, customerId)));
+      throw target ? new HttpError(409, 'onlyLastEntry') : notFound('entryNotFound');
+    }
+    if (Date.now() - latest.createdAt.getTime() > UNDO_WINDOW_MS) {
+      throw new HttpError(409, 'entryTooOld');
+    }
+
+    const balance = locked.balance - (latest.type === 'baki' ? latest.amount : -latest.amount);
+    const lastEntryAt = previous?.createdAt ?? null;
+    await tx.delete(transactions).where(eq(transactions.id, latest.id));
+    await tx.update(customers).set({ balance, lastEntryAt }).where(eq(customers.id, customerId));
+    return { ...locked, balance, lastEntryAt };
+  });
+
+  res.json({ customer: serializeCustomer(customer) });
+});
+
+/** Daily report: every entry in [from, to) across the shop, newest first. */
+ownerRouter.get('/report', async (req, res) => {
+  const { shopId } = ownerAuth(req);
+  const { from, to } = validate(reportQuerySchema, req.query);
+
+  const rows = await db
+    .select({ tx: transactions, customerName: customers.name, photoPath: customers.photoPath })
+    .from(transactions)
+    .innerJoin(customers, eq(customers.id, transactions.customerId))
+    .where(
+      and(
+        eq(transactions.shopId, shopId),
+        gte(transactions.createdAt, new Date(from)),
+        lt(transactions.createdAt, new Date(to)),
+      ),
+    )
+    .orderBy(desc(transactions.createdAt), desc(transactions.id))
+    .limit(1000);
+
+  res.json({
+    entries: rows.map((r) => ({
+      ...serializeTransaction(r.tx),
+      customerName: r.customerName,
+      customerPhotoUrl: r.photoPath ? `/uploads/${r.photoPath}` : null,
+    })),
   });
 });

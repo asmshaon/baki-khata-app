@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, radius } from '../lib/theme';
+import { colors, fontFamily, radius } from '../lib/theme';
 
 type Props = {
   label: string;
@@ -60,6 +60,6 @@ const styles = StyleSheet.create({
   base: { borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   normal: { minHeight: 64, flexDirection: 'row', gap: 10 },
   huge: { minHeight: 132, gap: 6, paddingVertical: 14 },
-  label: { fontSize: 22, fontWeight: '700' },
-  hugeLabel: { fontSize: 24, textAlign: 'center' },
+  label: { fontFamily, fontSize: 22, fontWeight: '700' },
+  hugeLabel: { fontFamily, fontSize: 24, textAlign: 'center' },
 });

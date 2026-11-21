@@ -1,7 +1,7 @@
 import type { Lang } from '@baki/shared';
 import * as SecureStore from 'expo-secure-store';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { formatDateTime, formatNumber } from './format';
+import { daysSince, formatDateTime, formatDay, formatNumber } from './format';
 
 /**
  * UI strings. Bangla is the default. Phone numbers, PINs and money use
@@ -9,6 +9,7 @@ import { formatDateTime, formatNumber } from './format';
  */
 const bn = {
   appName: 'বাকি খাতা',
+  tagline: 'দোকানের বাকির হিসাব, এখন মোবাইলে',
   whoAreYou: 'আপনি কে?',
   roleOwner: 'দোকানদার',
   roleCustomer: 'ক্রেতা',
@@ -80,12 +81,83 @@ const bn = {
   pinNotSet: 'পিন দিলে ক্রেতা নিজের হিসাব দেখতে পারবেন।',
   setPin: 'পিন দিন',
   changePin: 'পিন বদলান',
+
+  filterAll: 'সবাই',
+  filterOwing: 'বাকিদার',
+  today: 'আজ',
+  yesterday: 'গতকাল',
+  daysAgo: '{n} দিন আগে',
+  noEntryYet: 'এখনো লেনদেন হয়নি',
+  longDue: '{n}+ দিন',
+  owesShort: 'বাকি',
+  advanceShort: 'জমা',
+  remind: 'তাগাদা দিন',
+  remindHow: 'কীভাবে তাগাদা দেবেন?',
+  remindMessage: 'আসসালামু আলাইকুম {name}, {shop}-এ আপনার বাকি {amount}। সুবিধামতো পরিশোধ করার অনুরোধ রইল। ধন্যবাদ।',
+  appMissing: 'এই অ্যাপটি ফোনে নেই',
+  whatTaken: 'কী কী নিলেন? (ঐচ্ছিক)',
+  howPaid: 'কীভাবে দিলেন? (ঐচ্ছিক)',
+  itemRice: 'চাল',
+  itemLentil: 'ডাল',
+  itemOil: 'তেল',
+  itemSugar: 'চিনি',
+  itemEgg: 'ডিম',
+  itemVeg: 'সবজি',
+  itemSoap: 'সাবান',
+  itemRecharge: 'রিচার্জ',
+  payCash: 'ক্যাশ',
+  payBkash: 'বিকাশ',
+  payNagad: 'নগদ',
+  payRocket: 'রকেট',
+  undoEntry: 'ভুল? মুছুন',
+  undoConfirm: 'এই হিসাব মুছবেন?',
+  undoYes: 'হ্যাঁ, মুছুন',
+
+  quickAmounts: 'এক চাপে টাকা',
+  whenPay: 'কবে দেবেন? (ঐচ্ছিক)',
+  promise3: '৩ দিন পর',
+  promise7: '৭ দিন পর',
+  promise15: '১৫ দিন পর',
+  promiseMonth: 'মাসের ১ তারিখ',
+  promiseFriday: 'শুক্রবার',
+  promiseNone: 'জানি না',
+  noDate: 'তারিখ ছাড়া',
+  promiseOn: '{date} দেবেন',
+  promiseToday: 'আজ দেবে',
+  promiseLate: 'দেরি: {date}',
+  dueToday: 'আজ দেওয়ার কথা · {n} জন',
+  todayReport: 'আজকের হিসাব',
+  report: 'দিনের হিসাব',
+  previousDay: 'আগের দিন',
+  nextDay: 'পরের দিন',
+  peopleCount: '{n} জন',
+  howReceived: 'কীভাবে পেলাম',
+  methodUnknown: 'উল্লেখ নেই',
+  dayEntries: 'এই দিনের লেনদেন',
+  noEntriesDay: 'এই দিনে কোনো লেনদেন নেই',
+  sendStatement: 'হিসাব পাঠান',
+  statementRange: 'কত দিনের হিসাব?',
+  rangeLast5: 'শেষ ৫টি',
+  rangeMonth: 'এই মাস',
+  rangeAll: 'সব',
+  willSend: 'যা পাঠানো হবে',
+  sendNote: 'ফোনের অ্যাপ খুলবে — আপনি নিজে পাঠান চাপবেন',
+  statementTitle: '{shop} — {name}-এর হিসাব',
+  statementBaki: 'বাকি',
+  statementJoma: 'জমা',
+  statementMore: '… আরও {n}টি হিসাব',
+  statementTotalOwes: 'মোট বাকি: {amount}',
+  statementTotalAdvance: 'আগাম জমা: {amount}',
+  statementClear: 'কোনো বাকি নেই',
+  thanks: 'ধন্যবাদ।',
+  remindPromise: 'আপনি {date} দেবেন বলেছিলেন।',
 } as const;
 
 export type StringKey = keyof typeof bn;
 
 const en: Record<StringKey, string> = {
   appName: 'Baki Khata',
+  tagline: "Your shop's credit book, on your phone",
   whoAreYou: 'Who are you?',
   roleOwner: 'Shop owner',
   roleCustomer: 'Customer',
@@ -157,6 +229,76 @@ const en: Record<StringKey, string> = {
   pinNotSet: 'Set a PIN so the customer can see their own account.',
   setPin: 'Set PIN',
   changePin: 'Change PIN',
+
+  filterAll: 'All',
+  filterOwing: 'Owing',
+  today: 'Today',
+  yesterday: 'Yesterday',
+  daysAgo: '{n} days ago',
+  noEntryYet: 'No entries yet',
+  longDue: '{n}+ days',
+  owesShort: 'due',
+  advanceShort: 'advance',
+  remind: 'Send reminder',
+  remindHow: 'How to send the reminder?',
+  remindMessage: 'Hello {name}, your due at {shop} is {amount}. Please pay when convenient. Thank you.',
+  appMissing: 'This app is not on the phone',
+  whatTaken: 'What was taken? (optional)',
+  howPaid: 'How was it paid? (optional)',
+  itemRice: 'Rice',
+  itemLentil: 'Lentils',
+  itemOil: 'Oil',
+  itemSugar: 'Sugar',
+  itemEgg: 'Eggs',
+  itemVeg: 'Vegetables',
+  itemSoap: 'Soap',
+  itemRecharge: 'Recharge',
+  payCash: 'Cash',
+  payBkash: 'bKash',
+  payNagad: 'Nagad',
+  payRocket: 'Rocket',
+  undoEntry: 'Mistake? Delete',
+  undoConfirm: 'Delete this entry?',
+  undoYes: 'Yes, delete',
+
+  quickAmounts: 'One-tap amounts',
+  whenPay: 'When will they pay? (optional)',
+  promise3: 'In 3 days',
+  promise7: 'In 7 days',
+  promise15: 'In 15 days',
+  promiseMonth: '1st of the month',
+  promiseFriday: 'Friday',
+  promiseNone: "Don't know",
+  noDate: 'No date',
+  promiseOn: 'Pays {date}',
+  promiseToday: 'Pays today',
+  promiseLate: 'Late: {date}',
+  dueToday: 'Due today · {n}',
+  todayReport: "Today's report",
+  report: 'Daily report',
+  previousDay: 'Previous day',
+  nextDay: 'Next day',
+  peopleCount: '{n} people',
+  howReceived: 'How it was paid',
+  methodUnknown: 'Not given',
+  dayEntries: "This day's entries",
+  noEntriesDay: 'No entries on this day',
+  sendStatement: 'Send statement',
+  statementRange: 'Which entries?',
+  rangeLast5: 'Last 5',
+  rangeMonth: 'This month',
+  rangeAll: 'All',
+  willSend: 'This will be sent',
+  sendNote: 'Your phone app opens — you press send yourself',
+  statementTitle: '{shop} — statement for {name}',
+  statementBaki: 'credit',
+  statementJoma: 'paid',
+  statementMore: '… {n} more entries',
+  statementTotalOwes: 'Total due: {amount}',
+  statementTotalAdvance: 'Paid in advance: {amount}',
+  statementClear: 'Nothing due',
+  thanks: 'Thank you.',
+  remindPromise: 'You said you would pay on {date}.',
 };
 
 const STRINGS: Record<Lang, Record<StringKey, string>> = { bn, en };
@@ -180,6 +322,10 @@ type I18n = {
   /** Count or other plain number in the current language's digits. */
   num: (value: number) => string;
   dateTime: (iso: string) => string;
+  /** "আজ", "গতকাল", "৫ দিন আগে". */
+  ago: (iso: string) => string;
+  /** A YYYY-MM-DD day as "১ ডিসেম্বর" / "1 Dec". */
+  day: (dayString: string) => string;
 };
 
 const I18nContext = createContext<I18n | null>(null);
@@ -214,6 +360,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       t: (key, vars) => translate(lang, key, vars),
       num: (n) => formatNumber(n, lang),
       dateTime: (iso) => formatDateTime(iso, lang),
+      ago: (iso) => {
+        const days = daysSince(iso);
+        if (days <= 0) return translate(lang, 'today');
+        if (days === 1) return translate(lang, 'yesterday');
+        return translate(lang, 'daysAgo', { n: formatNumber(days, lang) });
+      },
+      day: (d) => formatDay(d, lang),
     }),
     [lang, ready, setLang],
   );

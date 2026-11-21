@@ -9,7 +9,7 @@ import { HeaderActions } from '../../components/HeaderActions';
 import { useI18n } from '../../lib/i18n';
 import { keys } from '../../lib/queries';
 import { useCustomerSession, useSession } from '../../lib/session';
-import { colors } from '../../lib/theme';
+import { colors, fontFamily } from '../../lib/theme';
 
 /** Read-only portal: the customer's balance at this shop and their history. */
 export default function CustomerHome() {
@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   list: { paddingHorizontal: 16, gap: 8 },
   header: { gap: 14, paddingTop: 16, paddingBottom: 4 },
-  greeting: { fontSize: 28, fontWeight: '800', color: colors.text, textAlign: 'center' },
-  warn: { fontSize: 16, color: colors.baki, textAlign: 'center' },
-  sectionTitle: { fontSize: 22, fontWeight: '800', color: colors.text, marginTop: 4 },
-  empty: { fontSize: 18, color: colors.muted, textAlign: 'center', paddingVertical: 24 },
+  greeting: { fontFamily, fontSize: 28, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  warn: { fontFamily, fontSize: 16, color: colors.baki, textAlign: 'center' },
+  sectionTitle: { fontFamily, fontSize: 22, fontWeight: '800', color: colors.text, marginTop: 4 },
+  empty: { fontFamily, fontSize: 18, color: colors.muted, textAlign: 'center', paddingVertical: 24 },
 });

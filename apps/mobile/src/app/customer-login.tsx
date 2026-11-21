@@ -11,7 +11,7 @@ import { api, errorMessage } from '../lib/api';
 import { formatTaka } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import { useSession } from '../lib/session';
-import { colors, radius } from '../lib/theme';
+import { colors, fontFamily, radius } from '../lib/theme';
 
 /** Customer sign-in. A phone can belong to several shops; if more than one matches, ask which. */
 export default function CustomerLogin() {
@@ -111,7 +111,7 @@ export default function CustomerLogin() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   list: { padding: 16, gap: 12 },
-  heading: { fontSize: 26, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 8 },
+  heading: { fontFamily, fontSize: 26, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 8 },
   shop: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -122,6 +122,6 @@ const styles = StyleSheet.create({
     minHeight: 96,
   },
   shopIcon: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  shopName: { fontSize: 22, fontWeight: '700', color: colors.text },
-  shopBalance: { fontSize: 18, fontWeight: '600', marginTop: 2 },
+  shopName: { fontFamily, fontSize: 22, fontWeight: '700', color: colors.text },
+  shopBalance: { fontFamily, fontSize: 18, fontWeight: '600', marginTop: 2 },
 });

@@ -10,6 +10,7 @@ A mobile version of the `../baki-khata` shop ledger: shops record **baki** (cred
 - **Audience is low-literacy.** UI rules:
   - **Two languages, Bangla (default) and English**, switched with `LanguageToggle` on the welcome screen and both home headers. The choice is stored in secure-store (`baki.lang`). Never hard-code UI text: add a key to both dictionaries in `apps/mobile/src/lib/i18n.tsx` and use `useI18n().t()`. Dates and counts follow the language (`num()`, `dateTime()`).
   - **Phone numbers, PINs and money amounts always use English digits** (`৳ 1,250`, `01712-345678`), in both languages and on the keypad (user request, 2026-11-18).
+  - **Font: Kalpurush** (`apps/mobile/assets/fonts/Kalpurush.ttf`, OFL, user choice 2026-11-19). It is loaded with `useFonts` in `app/_layout.tsx`. React Native has no global font, so every text style must include `fontFamily` from `lib/theme.ts`. There is a single weight, so bold is synthesised.
   - Large icon buttons with short labels.
   - **Red = baki** (customer owes), **green = joma** (paid).
   - Customer **photos** (camera or gallery) so owners recognise people without reading.
@@ -34,15 +35,18 @@ apps/api/               Express API
   src/lib/              auth (jwt, bcrypt pin, requireRole), validate, http-error, serialize
   src/routes/auth.ts    POST /auth/owner/register, /auth/owner/login, /auth/customer/login
   src/routes/owner.ts   /owner/me, /summary, /customers (GET/POST, ?q=), /customers/:id (GET/PATCH),
-                        /customers/:id/photo (multipart "photo"), /customers/:id/transactions (GET/POST)
+                        /customers/:id/photo (multipart "photo"), /customers/:id/transactions (GET/POST),
+                        DELETE /customers/:id/transactions/:txId (undo: latest entry only, within 24h),
+                        /report?from&to (daily report; the app sends its local day as ISO instants)
   src/routes/customer.ts /customer/me, /customer/transactions
   src/app.ts            createApp() (used by server.ts and tests); serves /uploads statically
 apps/api/test/          vitest + supertest against TEST_DATABASE_URL (global-setup rebuilds the DB from migrations)
 apps/mobile/src/app/    Expo Router screens: index (role picker), owner-login, owner-register, customer-login,
-                        owner/ (home, add-customer, customer/[id]/{index,entry,edit}), customer/ (portal)
+                        owner/ (home, add-customer, report, customer/[id]/{index,entry,edit,statement}), customer/ (portal)
 apps/mobile/src/lib/    api (fetch + ApiError), session (secure-store), i18n (bn/en strings + provider), format (taka, phone, dates),
-                        queries (react-query), photo, theme
-apps/mobile/src/components/  Keypad, NumberEntry, TextStep, BigButton, ConfirmBar, Avatar, Balance, LanguageToggle
+                        queries (react-query), photo, reminder (তাগাদা + statement text, SMS/WhatsApp deep links),
+                        promise (promise-date chips), methods (cash/bKash/Nagad/Rocket labels), theme
+apps/mobile/src/components/  Keypad, NumberEntry, TextStep, BigButton, ConfirmBar, Avatar, Balance, LanguageToggle, ChipPicker
 ```
 
 ## Environment
@@ -55,11 +59,24 @@ apps/mobile/src/components/  Keypad, NumberEntry, TextStep, BigButton, ConfirmBa
 
 ## Status / next steps
 
-Done (2026-11-18): install, migrations, API tests (26 passing, incl. cross-shop isolation and concurrent-entry locking), and every mobile screen listed in the original plan. `tsc`, `expo lint`, `expo-doctor` and an Android/iOS `expo export` are all clean.
+Done (2026-11-18): install, migrations, API tests (34 passing, incl. cross-shop isolation and concurrent-entry locking), and every mobile screen listed in the original plan. `tsc`, `expo lint`, `expo-doctor` and an Android/iOS `expo export` are all clean.
 
+- Added 2026-11-19, based on research into how Bangladeshi shops run baki:
+  - তাগাদা (reminder) button: opens SMS or WhatsApp with a prefilled polite message. Nothing is sent from the server.
+  - One-tap note chips on the entry confirm screen: items for baki, cash/bKash/Nagad/Rocket for joma. They are saved in `transactions.note`.
+  - `customers.last_entry_at`: the home list shows "N days ago", plus a red "30+ days" badge when the customer owes money.
+  - All / Owing filter on the owner home.
+  - Undo of the latest entry within 24 hours.
+- Added 2026-11-19 (second batch):
+  - Quick amounts (৳50–1000) on the amount keypad.
+  - A promise date (`customers.promised_on`) can be set when giving baki. It is cleared once the balance reaches 0 or below. The home screen shows a "due today" card, and the reminder message mentions the date.
+  - The joma payment method is stored in `transactions.method`. It is a column, not note text, so the daily report can total by method.
+  - Daily report screen, and a "send statement" screen that shares via WhatsApp or SMS.
+  - Undo does not restore a cleared promise date.
+- **Time zones:** `db/client.ts` forces every MySQL session to UTC (`timezone: 'Z'` and `SET time_zone`). Drizzle writes Dates as UTC strings, so without this, date filters and written timestamps shift by the host offset (+06 here). Don't remove it.
 - Root `package.json` `overrides` pins `react`/`react-dom` to the app's React version. When upgrading the Expo SDK, update the overrides too, or two React copies get installed.
 - The mobile API URL is `EXPO_PUBLIC_API_URL`, falling back to the Expo dev server's LAN host on port 4000.
-- Not yet done: testing on a real device, a release build (Android release builds block cleartext HTTP, so the API needs HTTPS or a cleartext config), and an owner screen for deleting customers or entries (the API has no delete endpoints).
+- Not yet done: testing on a real device, a release build (Android release builds block cleartext HTTP, so the API needs HTTPS or a cleartext config), and deleting customers (no endpoint yet).
 
 ## Expo SDK 58 notes (verified from docs.expo.dev; see `apps/mobile/AGENTS.md`)
 

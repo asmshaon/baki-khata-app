@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatPhone, formatTaka } from '../lib/format';
-import { colors } from '../lib/theme';
+import { useI18n } from '../lib/i18n';
+import { colors, fontFamily } from '../lib/theme';
 import { Keypad } from './Keypad';
 
 type Kind = 'phone' | 'pin' | 'amount';
@@ -19,6 +20,8 @@ type Props = {
   error?: string | null;
   busy?: boolean;
   accent?: string;
+  /** Amount only: one-tap buttons that fill in a common amount. */
+  quickAmounts?: number[];
 };
 
 function isComplete(kind: Kind, value: string) {
@@ -28,7 +31,8 @@ function isComplete(kind: Kind, value: string) {
 }
 
 /** One question per screen: an icon, a short label, what was typed, and the keypad. */
-export function NumberEntry({ kind, label, icon, value, onChange, onDone, error, busy, accent = colors.primary }: Props) {
+export function NumberEntry({ kind, label, icon, value, onChange, onDone, error, busy, accent = colors.primary, quickAmounts }: Props) {
+  const { t } = useI18n();
   const handleDigit = (digit: string) => {
     if (busy || value.length >= MAX_LENGTH[kind]) return;
     if (kind === 'amount' && value === '' && digit === '0') return;
@@ -61,6 +65,33 @@ export function NumberEntry({ kind, label, icon, value, onChange, onDone, error,
           {busy ? <ActivityIndicator size="large" color={accent} /> : error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
       </View>
+      <View>
+      {kind === 'amount' && quickAmounts?.length ? (
+        <View style={styles.quick}>
+          <Text style={styles.quickLabel}>{t('quickAmounts')}</Text>
+          <View style={styles.quickRow}>
+            {quickAmounts.map((n) => {
+              const on = value === String(n);
+              return (
+                <Pressable
+                  key={n}
+                  onPress={() => !busy && onChange(String(n))}
+                  accessibilityRole="button"
+                  accessibilityLabel={formatTaka(n)}
+                  style={({ pressed }) => [
+                    styles.quickChip,
+                    { borderColor: accent },
+                    on && { backgroundColor: accent },
+                    pressed && { opacity: 0.8 },
+                  ]}
+                >
+                  <Text style={[styles.quickText, { color: on ? '#fff' : accent }]}>{n}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
       <Keypad
         onDigit={handleDigit}
         onBackspace={() => !busy && onChange(value.slice(0, -1))}
@@ -68,6 +99,7 @@ export function NumberEntry({ kind, label, icon, value, onChange, onDone, error,
         doneEnabled={!busy && isComplete(kind, value)}
         doneColor={kind === 'amount' ? accent : colors.joma}
       />
+      </View>
     </View>
   );
 }
@@ -76,7 +108,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'space-between', backgroundColor: colors.bg },
   top: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, gap: 12 },
   iconCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  label: { fontFamily, fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
   display: {
     alignSelf: 'stretch',
     minHeight: 76,
@@ -87,10 +119,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
-  value: { fontSize: 36, fontWeight: '700', color: colors.text, letterSpacing: 1 },
+  value: { fontFamily, fontSize: 36, fontWeight: '700', color: colors.text, letterSpacing: 1 },
   placeholder: { color: colors.border },
   dots: { flexDirection: 'row', gap: 22 },
   dot: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: colors.muted },
   status: { minHeight: 44, justifyContent: 'center' },
-  error: { fontSize: 18, color: colors.baki, fontWeight: '600', textAlign: 'center' },
+  quick: { paddingHorizontal: 16, paddingBottom: 10, gap: 6 },
+  quickLabel: { fontFamily, fontSize: 15, fontWeight: '700', color: colors.muted, textAlign: 'center' },
+  quickRow: { flexDirection: 'row', gap: 6 },
+  quickChip: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickText: { fontFamily, fontSize: 18, fontWeight: '800' },
+  error: { fontFamily, fontSize: 18, color: colors.baki, fontWeight: '600', textAlign: 'center' },
 });

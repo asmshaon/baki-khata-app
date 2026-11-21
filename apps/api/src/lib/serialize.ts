@@ -13,6 +13,8 @@ export function serializeCustomer(row: CustomerRow): Customer {
     photoUrl: row.photoPath ? `/uploads/${row.photoPath}` : null,
     balance: row.balance,
     hasPin: row.pinHash !== null,
+    lastEntryAt: row.lastEntryAt?.toISOString() ?? null,
+    promisedOn: row.promisedOn ?? null,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -23,6 +25,7 @@ export function serializeTransaction(row: TransactionRow): Transaction {
     customerId: row.customerId,
     type: row.type,
     amount: row.amount,
+    method: row.method,
     note: row.note,
     balanceAfter: row.balanceAfter,
     createdAt: row.createdAt.toISOString(),

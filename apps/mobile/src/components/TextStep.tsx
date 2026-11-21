@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useI18n } from '../lib/i18n';
-import { colors } from '../lib/theme';
+import { colors, fontFamily } from '../lib/theme';
 import { BigButton } from './BigButton';
 
 type Props = {
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  label: { fontFamily, fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
   input: {
     alignSelf: 'stretch',
     minHeight: 68,
@@ -74,10 +74,10 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderRadius: 16,
     backgroundColor: colors.card,
-    fontSize: 26,
+    fontFamily, fontSize: 26,
     paddingHorizontal: 16,
     color: colors.text,
   },
-  error: { fontSize: 18, color: colors.baki, fontWeight: '600' },
+  error: { fontFamily, fontSize: 18, color: colors.baki, fontWeight: '600' },
   button: { alignSelf: 'stretch', marginTop: 4 },
 });

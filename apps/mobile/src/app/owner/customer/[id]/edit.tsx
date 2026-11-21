@@ -11,7 +11,7 @@ import { NumberEntry } from '../../../../components/NumberEntry';
 import { ApiError, api, errorMessage } from '../../../../lib/api';
 import { useI18n } from '../../../../lib/i18n';
 import { useCustomer, useRefreshCustomer } from '../../../../lib/queries';
-import { colors, radius } from '../../../../lib/theme';
+import { colors, fontFamily, radius } from '../../../../lib/theme';
 
 /** Edit name/address, and set the PIN the customer uses to see their own khata. */
 export default function EditCustomer() {
@@ -145,18 +145,18 @@ const styles = StyleSheet.create({
   form: { padding: 16, gap: 16 },
   field: { gap: 6 },
   fieldLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  label: { fontSize: 18, fontWeight: '700', color: colors.muted },
+  label: { fontFamily, fontSize: 18, fontWeight: '700', color: colors.muted },
   input: {
     minHeight: 60,
     borderWidth: 2,
     borderColor: colors.border,
     borderRadius: radius.md,
     backgroundColor: colors.card,
-    fontSize: 22,
+    fontFamily, fontSize: 22,
     paddingHorizontal: 14,
     color: colors.text,
   },
-  error: { fontSize: 16, color: colors.baki, fontWeight: '600' },
+  error: { fontFamily, fontSize: 16, color: colors.baki, fontWeight: '600' },
   pinCard: {
     flexDirection: 'row',
     gap: 12,
@@ -166,6 +166,6 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 12,
   },
-  pinTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
-  pinHint: { fontSize: 16, color: colors.text, marginTop: 2 },
+  pinTitle: { fontFamily, fontSize: 20, fontWeight: '800', color: colors.text },
+  pinHint: { fontFamily, fontSize: 16, color: colors.text, marginTop: 2 },
 });

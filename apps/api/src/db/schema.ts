@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
   bigint,
+  date,
   index,
   int,
   mysqlEnum,
@@ -43,6 +44,10 @@ export const customers = mysqlTable(
     photoPath: varchar('photo_path', { length: 200 }),
     pinHash: varchar('pin_hash', { length: 100 }),
     balance: int('balance').notNull().default(0),
+    /** When the latest baki/joma entry was recorded; shows "last entry N days ago". */
+    lastEntryAt: timestamp('last_entry_at'),
+    /** Day the customer promised to pay (কবে দেবে), as YYYY-MM-DD. Cleared once nothing is owed. */
+    promisedOn: date('promised_on', { mode: 'string' }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
@@ -63,6 +68,8 @@ export const transactions = mysqlTable(
       .references(() => customers.id, { onDelete: 'cascade' }),
     type: mysqlEnum('type', ['baki', 'joma']).notNull(),
     amount: int('amount').notNull(),
+    /** How a joma was paid; null for baki or when not given. */
+    method: mysqlEnum('method', ['cash', 'bkash', 'nagad', 'rocket']),
     note: varchar('note', { length: 160 }),
     balanceAfter: int('balance_after').notNull(),
     createdBy: ref('created_by').references(() => owners.id, { onDelete: 'set null' }),

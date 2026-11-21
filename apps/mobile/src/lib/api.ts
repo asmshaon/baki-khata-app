@@ -43,7 +43,7 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler;
 }
 
-type Options = { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown; form?: FormData };
+type Options = { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown; form?: FormData };
 
 export async function api<T>(path: string, { method = 'GET', body, form }: Options = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': getLang() };

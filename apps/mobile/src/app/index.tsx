@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LanguageToggle } from '../components/LanguageToggle';
 import { useI18n } from '../lib/i18n';
 import { useSession } from '../lib/session';
-import { colors, radius } from '../lib/theme';
+import { colors, fontFamily, radius } from '../lib/theme';
 
 /** Role picker: shop owner or customer. Signed-in users skip straight to their home. */
 export default function Welcome() {
@@ -26,10 +26,11 @@ export default function Welcome() {
           <Ionicons name="book" size={52} color="#fff" />
         </View>
         <Text style={styles.title}>{t('appName')}</Text>
-        <Text style={styles.subtitle}>{t('whoAreYou')}</Text>
+        <Text style={styles.tagline}>{t('tagline')}</Text>
       </View>
 
       <View style={styles.choices}>
+        <Text style={styles.subtitle}>{t('whoAreYou')}</Text>
         <RoleCard
           icon="storefront"
           label={t('roleOwner')}
@@ -73,6 +74,7 @@ function RoleCard({
         <Ionicons name={icon} size={56} color="#fff" />
       </View>
       <Text style={[styles.cardLabel, { color }]}>{label}</Text>
+      <Ionicons name="chevron-forward" size={36} color={color} style={styles.chevron} />
     </Pressable>
   );
 }
@@ -89,8 +91,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 40, fontWeight: '800', color: colors.text },
-  subtitle: { fontSize: 24, color: colors.muted, fontWeight: '600' },
+  title: { fontFamily, fontSize: 40, fontWeight: '800', color: colors.text },
+  tagline: { fontFamily, fontSize: 18, color: colors.muted, fontWeight: '600', textAlign: 'center' },
+  subtitle: { fontFamily, fontSize: 24, color: colors.text, fontWeight: '700', textAlign: 'center' },
   choices: { gap: 18 },
   card: {
     flexDirection: 'row',
@@ -102,5 +105,6 @@ const styles = StyleSheet.create({
     minHeight: 130,
   },
   cardIcon: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' },
-  cardLabel: { fontSize: 32, fontWeight: '800' },
+  cardLabel: { flex: 1, fontFamily, fontSize: 30, fontWeight: '800' },
+  chevron: { marginLeft: 'auto' },
 });

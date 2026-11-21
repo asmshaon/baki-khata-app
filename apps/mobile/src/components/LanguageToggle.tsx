@@ -1,7 +1,7 @@
 import type { Lang } from '@baki/shared';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../lib/i18n';
-import { colors } from '../lib/theme';
+import { colors, fontFamily } from '../lib/theme';
 
 const OPTIONS: { lang: Lang; label: string }[] = [
   { lang: 'bn', label: 'বাং' },
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   },
   segment: { minWidth: 42, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, alignItems: 'center' },
   selected: { backgroundColor: colors.primary },
-  text: { fontSize: 15, fontWeight: '800' },
+  text: { fontFamily, fontSize: 15, fontWeight: '800' },
   selectedText: { color: '#fff' },
   unselectedText: { color: '#9AA0A6' },
 });

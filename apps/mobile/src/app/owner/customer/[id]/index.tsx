@@ -1,3 +1,4 @@
+import type { Transaction } from '@baki/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -7,20 +8,25 @@ import { Avatar } from '../../../../components/Avatar';
 import { BalanceCard, LoadState, TransactionRow } from '../../../../components/Balance';
 import { BigButton } from '../../../../components/BigButton';
 import { errorMessage } from '../../../../lib/api';
-import { formatPhone } from '../../../../lib/format';
+import { daysSince, formatPhone, formatTaka } from '../../../../lib/format';
 import { useI18n } from '../../../../lib/i18n';
 import { pickPhoto, uploadCustomerPhoto } from '../../../../lib/photo';
-import { useCustomer, useCustomerTransactions, useRefreshCustomer } from '../../../../lib/queries';
-import { colors } from '../../../../lib/theme';
+import { useCustomer, useCustomerTransactions, useRefreshCustomer, useUndoEntry, withinUndoWindow } from '../../../../lib/queries';
+import { isPromiseDue } from '../../../../lib/promise';
+import { openSms, openWhatsApp, reminderText } from '../../../../lib/reminder';
+import { useOwnerSession } from '../../../../lib/session';
+import { colors, fontFamily } from '../../../../lib/theme';
 
 /** One customer: big photo, big balance, and the two main actions. History below. */
 export default function CustomerDetail() {
   const id = Number(useLocalSearchParams<{ id: string }>().id);
   const insets = useSafeAreaInsets();
-  const { t } = useI18n();
+  const { t, ago, day } = useI18n();
   const customer = useCustomer(id);
   const history = useCustomerTransactions(id);
   const refreshCustomer = useRefreshCustomer();
+  const { shop } = useOwnerSession();
+  const undo = useUndoEntry(id);
 
   const photo = useMutation({
     mutationFn: async (source: 'camera' | 'gallery') => {
@@ -48,6 +54,32 @@ export default function CustomerDetail() {
     );
   }
   const c = customer.data;
+  const latest = history.data?.[0];
+  // The API only allows deleting the latest entry, within 24 hours.
+  const canUndo = (tx: Transaction) => tx.id === latest?.id && withinUndoWindow(tx.createdAt);
+
+  const confirmUndo = (tx: Transaction) =>
+    Alert.alert(
+      t('undoConfirm'),
+      `${t(tx.type === 'baki' ? 'bakiGiven' : 'paymentReceived')}: ${formatTaka(tx.amount)}`,
+      [
+        { text: t('no'), style: 'cancel' },
+        {
+          text: t('undoYes'),
+          style: 'destructive',
+          onPress: () => undo.mutate(tx.id, { onError: (err) => Alert.alert(errorMessage(err)) }),
+        },
+      ],
+    );
+
+  const remind = () => {
+    const text = reminderText(c, shop.name);
+    Alert.alert(t('remindHow'), text, [
+      { text: 'SMS', onPress: () => void openSms(c.phone, text) },
+      { text: 'WhatsApp', onPress: () => void openWhatsApp(c.phone, text) },
+      { text: t('cancel'), style: 'cancel' },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -126,7 +158,41 @@ export default function CustomerDetail() {
               />
             </View>
 
-            <Text style={styles.sectionTitle}>{t('history')}</Text>
+            {c.promisedOn && c.balance > 0 ? (
+              <View style={[styles.promise, isPromiseDue(c.promisedOn, c.balance) && styles.promiseDue]}>
+                <Ionicons name="calendar" size={22} color={colors.promise} />
+                <Text style={styles.promiseText}>{t('promiseOn', { date: day(c.promisedOn) })}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.secondary}>
+              {c.balance > 0 ? (
+                <BigButton
+                  icon="notifications"
+                  label={t('remind')}
+                  variant="outline"
+                  color={colors.baki}
+                  onPress={remind}
+                  style={styles.flex}
+                />
+              ) : null}
+              <BigButton
+                icon="share-social"
+                label={t('sendStatement')}
+                variant="outline"
+                onPress={() => router.push(`/owner/customer/${id}/statement`)}
+                style={styles.flex}
+              />
+            </View>
+
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionTitle}>{t('history')}</Text>
+              {c.lastEntryAt ? (
+                <Text style={[styles.lastEntry, c.balance > 0 && daysSince(c.lastEntryAt) >= 30 && { color: colors.baki }]}>
+                  {ago(c.lastEntryAt)}
+                </Text>
+              ) : null}
+            </View>
             {history.isPending ? <ActivityIndicator size="large" color={colors.primary} /> : null}
           </View>
         }
@@ -135,7 +201,13 @@ export default function CustomerDetail() {
             <Text style={styles.empty}>{history.isError ? errorMessage(history.error) : t('noHistory')}</Text>
           )
         }
-        renderItem={({ item }) => <TransactionRow tx={item} />}
+        renderItem={({ item }) => (
+          <TransactionRow
+            tx={item}
+            onUndo={canUndo(item) ? () => confirmUndo(item) : undefined}
+            undoing={undo.isPending && undo.variables === item.id}
+          />
+        )}
       />
     </View>
   );
@@ -160,10 +232,24 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
   },
-  name: { fontSize: 30, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  name: { fontFamily, fontSize: 30, fontWeight: '800', color: colors.text, textAlign: 'center' },
   phone: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 6 },
-  phoneText: { fontSize: 20, color: colors.primary, fontWeight: '600' },
+  phoneText: { fontFamily, fontSize: 20, color: colors.primary, fontWeight: '600' },
   actions: { flexDirection: 'row', gap: 12 },
-  sectionTitle: { fontSize: 22, fontWeight: '800', color: colors.text, marginTop: 4 },
-  empty: { fontSize: 18, color: colors.muted, textAlign: 'center', paddingVertical: 24 },
+  secondary: { flexDirection: 'row', gap: 10 },
+  promise: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.promiseSoft,
+    borderRadius: 14,
+    paddingVertical: 10,
+  },
+  promiseDue: { borderWidth: 2, borderColor: colors.promise },
+  promiseText: { fontFamily, fontSize: 19, fontWeight: '800', color: colors.promiseText },
+  sectionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 4 },
+  sectionTitle: { fontFamily, fontSize: 22, fontWeight: '800', color: colors.text },
+  lastEntry: { fontFamily, fontSize: 16, color: colors.muted, fontWeight: '600' },
+  empty: { fontFamily, fontSize: 18, color: colors.muted, textAlign: 'center', paddingVertical: 24 },
 });

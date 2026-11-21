@@ -26,6 +26,10 @@ const bn = {
   nameRequired: 'নাম দিন',
   shopNameRequired: 'দোকানের নাম দিন',
   amountInvalid: 'টাকার পরিমাণ দিন',
+  entryNotFound: 'হিসাব পাওয়া যায়নি',
+  onlyLastEntry: 'শুধু শেষ হিসাবটি মোছা যায়',
+  entryTooOld: '২৪ ঘণ্টার পুরনো হিসাব মোছা যায় না',
+  dateInvalid: 'তারিখ ঠিক নেই',
 } as const;
 
 export type MessageKey = keyof typeof bn;
@@ -51,6 +55,10 @@ const en: Record<MessageKey, string> = {
   nameRequired: 'Enter a name',
   shopNameRequired: 'Enter the shop name',
   amountInvalid: 'Enter an amount',
+  entryNotFound: 'Entry not found',
+  onlyLastEntry: 'Only the latest entry can be deleted',
+  entryTooOld: 'Entries older than 24 hours cannot be deleted',
+  dateInvalid: 'Not a valid date',
 };
 
 const catalogue: Record<Lang, Record<MessageKey, string>> = { bn, en };

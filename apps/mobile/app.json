@@ -34,6 +34,14 @@
           "cameraPermission": "গ্রাহকের ছবি তুলতে ক্যামেরার অনুমতি দরকার।",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Kalpurush.ttf"
+          ]
+        }
       ]
     ],
     "scheme": "bakikhata"

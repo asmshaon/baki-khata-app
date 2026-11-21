@@ -14,7 +14,7 @@ import { formatPhone } from '../../lib/format';
 import { useI18n } from '../../lib/i18n';
 import { pickPhoto, uploadCustomerPhoto, type PickedPhoto } from '../../lib/photo';
 import { useRefreshCustomer } from '../../lib/queries';
-import { colors, radius } from '../../lib/theme';
+import { colors, fontFamily, radius } from '../../lib/theme';
 
 type Step = 'photo' | 'name' | 'phone' | 'confirm';
 
@@ -149,15 +149,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heading: { fontSize: 26, fontWeight: '800', color: colors.text, textAlign: 'center' },
+  heading: { fontFamily, fontSize: 26, fontWeight: '800', color: colors.text, textAlign: 'center' },
   buttons: { alignSelf: 'stretch', gap: 12 },
   rowButtons: { flexDirection: 'row', gap: 12 },
   confirm: { alignItems: 'center', padding: 20, gap: 8 },
   preview: { width: 180, height: 180, borderRadius: 90, marginBottom: 8 },
-  confirmName: { fontSize: 30, fontWeight: '800', color: colors.text },
-  confirmPhone: { fontSize: 22, color: colors.muted, marginBottom: 16 },
+  confirmName: { fontFamily, fontSize: 30, fontWeight: '800', color: colors.text },
+  confirmPhone: { fontFamily, fontSize: 22, color: colors.muted, marginBottom: 16 },
   error: {
-    fontSize: 18,
+    fontFamily, fontSize: 18,
     color: colors.baki,
     fontWeight: '600',
     backgroundColor: colors.bakiSoft,

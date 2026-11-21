@@ -1,6 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { photoSource } from '../lib/api';
-import { avatarColor } from '../lib/theme';
+import { avatarColor, fontFamily } from '../lib/theme';
 
 type Props = { id: number; name: string; photoUrl: string | null; size?: number };
 
@@ -14,7 +14,7 @@ export function Avatar({ id, name, photoUrl, size = 56 }: Props) {
   const initial = Array.from(name.trim())[0] ?? '?';
   return (
     <View style={[shape, styles.initial, { backgroundColor: avatarColor(id) }]}>
-      <Text style={[styles.letter, { fontSize: size * 0.45 }]}>{initial}</Text>
+      <Text style={[styles.letter, { fontFamily, fontSize: size * 0.45 }]}>{initial}</Text>
     </View>
   );
 }
